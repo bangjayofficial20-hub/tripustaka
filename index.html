@@ -161,6 +161,17 @@ footer{background:var(--teal);color:var(--on-teal);padding:28px 0;text-align:cen
 <div id="ares" hidden style="margin-top:24px"><h3 id="ajudul" style="margin-bottom:10px"></h3><div class="twrap"><table class="tbl" id="atbl"></table></div>
 <p class="sub" id="anote" style="margin:8px 0 0;font-size:13px"></p>
 <div class="acts" style="margin-top:14px"><button class="btn" id="ax" type="button">Unduh Excel (.xlsx)</button><button class="btn alt" id="ac" type="button">Unduh CSV</button></div></div>
+<h3 style="margin:40px 0 6px">Tambah buku</h3>
+<p class="sub" style="margin-bottom:12px">Buku baru langsung masuk ke daftar di Google Sheets dan tampil di situs dalam beberapa menit. Memakai kunci admin yang sama di atas.</p>
+<form class="card" id="bf" novalidate>
+<div class="two"><div><label for="bj">Judul buku</label><input class="f" id="bj" maxlength="150"></div><div><label for="bp">Penulis</label><input class="f" id="bp" maxlength="100"></div></div>
+<div class="two"><div><label for="bc">Kategori</label><select class="f" id="bc"></select></div><div><label for="bs">Jumlah eksemplar</label><input class="f" id="bs" type="number" min="0" max="999" value="1"></div></div>
+<label for="bd">Sinopsis singkat (boleh dikosongkan)</label><textarea class="f" id="bd" rows="3" maxlength="400"></textarea>
+<label for="bl">Tautan baca digital (boleh dikosongkan)</label><input class="f" id="bl" maxlength="300" placeholder="https://… atau buku/nama-file.pdf">
+<div class="err" id="berr" role="alert"></div>
+<div id="bok" role="status" style="color:#2d8a4e;font-weight:700;min-height:20px"></div>
+<button class="btn" type="submit" id="bbtn">Tambahkan buku</button>
+</form>
 </div></section>
 <footer><div class="wrap">© 2026 TRI PUSTAKA · SMP Negeri 3 Munjungan</div></footer>
 
@@ -171,7 +182,7 @@ footer{background:var(--teal);color:var(--on-teal);padding:28px 0;text-align:cen
 /* ===== PENGATURAN: ubah bagian ini, lalu simpan (Commit) di GitHub ===== */
 var CONFIG={
   sheetBuku:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GgJIuqJgW2WK3q16tHmNrzEFV7IjlGp-Znn2I0UotQTsHnAooL3fTyzmHoc6DiJjl7iYKGli8Xi8/pub?gid=1048898412&single=true&output=csv",  // Tautan CSV tab "Buku" dari Google Sheets (File > Bagikan > Publikasikan ke web)
-  sheetInfo:"",  // Tautan CSV tab "Info"
+  sheetInfo:"https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GgJIuqJgW2WK3q16tHmNrzEFV7IjlGp-Znn2I0UotQTsHnAooL3fTyzmHoc6DiJjl7iYKGli8Xi8/pub?gid=1070411702&single=true&output=csv",  // Tautan CSV tab "Info"
   wa:"6282334029635", form:"", formEntry:"",
   hadir:{url:"https://docs.google.com/forms/d/e/1FAIpQLSe8ZPIUK4daCAYcMBpHkIJQ1Y3zbQOlT22LuhKXHOiPCcMHOw/viewform", nama:"entry.1764749834", kelas:"entry.1299046399", perlu:"entry.1394978750"},
   admin:{url:"https://script.google.com/macros/s/AKfycbxM3YZ0Xi05488u_q_VODTX1YHFlgRiNWXPt0Qi8zNxhFrWzsvu2p3J9sY9_9EgRFqG8w/exec"},
@@ -358,6 +369,26 @@ function dlXLSX(){
   });
 }
 $("ax").addEventListener("click",dlXLSX);$("ac").addEventListener("click",dlCSV);
+$("bc").innerHTML=CONFIG.kategori.map(function(k){return '<option>'+esc(k)+'</option>'}).join("");
+$("bf").addEventListener("submit",function(e){
+  e.preventDefault();
+  var A=CONFIG.admin||{},er=$("berr"),ok=$("bok"),key=$("ak").value;
+  ok.textContent="";
+  if(!A.url){er.textContent="Admin belum diaktifkan. Tempel tautan Apps Script di bagian PENGATURAN.";return}
+  if(!key){er.textContent="Masukkan kunci admin di kolom Kunci admin (bagian atas).";$("ak").focus();return}
+  var j=$("bj").value.trim(),pn=$("bp").value.trim();
+  if(!j){er.textContent="Tulis judul buku.";$("bj").focus();return}
+  if(!pn){er.textContent="Tulis nama penulis.";$("bp").focus();return}
+  var enc=encodeURIComponent,
+      q="?aksi=tambahbuku&kunci="+enc(key)+"&judul="+enc(j)+"&penulis="+enc(pn)+"&kategori="+enc($("bc").value)+"&stok="+enc($("bs").value)+"&sinopsis="+enc($("bd").value.trim())+"&link="+enc($("bl").value.trim());
+  if(q.length>1900){er.textContent="Data terlalu panjang. Persingkat sinopsis atau tautan.";return}
+  er.textContent="";var b=$("bbtn");b.disabled=true;b.textContent="Menyimpan\u2026";
+  fetch(A.url+q).then(function(r){return r.json()}).then(function(d){
+    if(!d.ok){er.textContent=d.error||"Gagal menambahkan buku.";return}
+    ok.textContent=d.pesan+" Tampil di situs dalam beberapa menit.";
+    ["bj","bp","bd","bl"].forEach(function(i){$(i).value=""});$("bs").value="1";
+  }).catch(function(){er.textContent="Tidak bisa menghubungi Google. Periksa internet dan tautan Apps Script."}).then(function(){b.disabled=false;b.textContent="Tambahkan buku"});
+});
 chips();render();loadSheets();
 </script>
 </body>
